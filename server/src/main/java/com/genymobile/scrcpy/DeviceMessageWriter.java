@@ -13,7 +13,6 @@ public class DeviceMessageWriter {
     private final byte[] rawBuffer = new byte[MAX_EVENT_SIZE];
     private final ByteBuffer buffer = ByteBuffer.wrap(rawBuffer);
 
-    @SuppressWarnings("checkstyle:MagicNumber")
     public void writeTo(DeviceMessage msg, OutputStream output) throws IOException {
         buffer.clear();
         buffer.put((byte) DeviceMessage.TYPE_CLIPBOARD);
@@ -27,7 +26,7 @@ public class DeviceMessageWriter {
                 output.write(rawBuffer, 0, buffer.position());
                 break;
             default:
-                Ln.w("Unknown device msg: " + msg.getType());
+                Ln.w("Unknown device message: " + msg.getType());
                 break;
         }
     }

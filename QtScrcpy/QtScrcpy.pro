@@ -26,6 +26,17 @@ msvc{
     QMAKE_CFLAGS += -source-charset:utf-8
     QMAKE_CXXFLAGS += -source-charset:utf-8
 }
+
+# warning as error
+#4566 https://github.com/Chuyu-Team/VC-LTL/issues/27
+*g++*: QMAKE_CXXFLAGS += -Werror
+*msvc*: QMAKE_CXXFLAGS += /WX /wd4566
+
+# run a server debugger and wait for a client to be attached
+# DEFINES += SERVER_DEBUGGER
+# select the debugger method ('old' for Android < 9, 'new' for Android >= 9)
+# DEFINES += SERVER_DEBUGGER_METHOD_NEW
+
 # 源码
 SOURCES += \
         main.cpp \
@@ -56,10 +67,18 @@ INCLUDEPATH += \
         $$PWD/devicemanage \
         $$PWD/fontawesome
 
-# 统一版本号入口,只修改这一个地方即可
-VERSION_MAJOR = 1
-VERSION_MINOR = 0
-VERSION_PATCH = 4
+# 如果变量没有定义
+# !defined(TEST_VAR, var) {
+#     message("test")
+# }
+
+# 从文件读取版本号
+CAT_VERSION = $$cat($$PWD/version)
+# 拆分出版本号
+VERSION_MAJOR = $$section(CAT_VERSION, ., 0, 0)
+VERSION_MINOR = $$section(CAT_VERSION, ., 1, 1)
+VERSION_PATCH = $$section(CAT_VERSION, ., 2, 2)
+message("version:" $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_PATCH})
 
 # qmake变量的方式定义版本号
 VERSION = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_PATCH}
@@ -121,6 +140,7 @@ win32 {
     # windows rc file
     RC_FILE = $$PWD/res/QtScrcpy.rc
 }
+
 # ***********************************************************
 # Mac平台下配置
 # ***********************************************************
@@ -140,7 +160,7 @@ macos {
             -L$$PWD/../third_party/ffmpeg/lib -lswscale.5
 
     # mac bundle file
-    APP_SCRCPY_SERVER.files = $$files($$PWD/../third_party/scrcpy-server.jar)
+    APP_SCRCPY_SERVER.files = $$files($$PWD/../third_party/scrcpy-server)
     APP_SCRCPY_SERVER.path = Contents/MacOS
     QMAKE_BUNDLE_DATA += APP_SCRCPY_SERVER
 
@@ -152,14 +172,18 @@ macos {
     APP_FFMPEG.path = Contents/MacOS
     QMAKE_BUNDLE_DATA += APP_FFMPEG
 
+    APP_CONFIG.files = $$files($$PWD/../config/config.ini)
+    APP_CONFIG.path = Contents/MacOS/config
+    QMAKE_BUNDLE_DATA += APP_CONFIG
+
     # mac application icon
     ICON = $$PWD/res/QtScrcpy.icns
-    QMAKE_INFO_PLIST = $$PWD/res/Info_mac.plist
+    QMAKE_INFO_PLIST = $$PWD/res/Info_Mac.plist
 
     # 定义目标命令（修改版本号字段）
     plistupdate.commands = /usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString $$VERSION\" \
     -c \"Set :CFBundleVersion $$VERSION\" \
-    $$QMAKE_INFO_PLIST
+    $$DESTDIR/$${TARGET}.app/Contents/Info.plist
 
     # 增加额外目标
     QMAKE_EXTRA_TARGETS += plistupdate

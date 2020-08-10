@@ -1,15 +1,15 @@
-#include <QDebug>
-#include <QTimer>
-#include <QThread>
-#include <QTimerEvent>
 #include <QCoreApplication>
+#include <QDebug>
 #include <QFileInfo>
+#include <QThread>
+#include <QTimer>
+#include <QTimerEvent>
 
+#include "config.h"
 #include "server.h"
 
-#define DEVICE_SERVER_PATH "/data/local/tmp/scrcpy-server.jar"
 #define DEVICE_NAME_FIELD_LENGTH 64
-#define SOCKET_NAME "qtscrcpy"
+#define SOCKET_NAME "scrcpy"
 #define MAX_CONNECT_COUNT 30
 #define MAX_RESTART_COUNT 1
 
@@ -18,10 +18,10 @@ Server::Server(QObject *parent) : QObject(parent)
     connect(&m_workProcess, &AdbProcess::adbProcessResult, this, &Server::onWorkProcessResult);
     connect(&m_serverProcess, &AdbProcess::adbProcessResult, this, &Server::onWorkProcessResult);
 
-    connect(&m_serverSocket, &QTcpServer::newConnection, this, [this](){
-        QTcpSocket* tmp = m_serverSocket.nextPendingConnection();
-        if (dynamic_cast<VideoSocket*>(tmp)) {
-            m_videoSocket = dynamic_cast<VideoSocket*>(tmp);
+    connect(&m_serverSocket, &QTcpServer::newConnection, this, [this]() {
+        QTcpSocket *tmp = m_serverSocket.nextPendingConnection();
+        if (dynamic_cast<VideoSocket *>(tmp)) {
+            m_videoSocket = dynamic_cast<VideoSocket *>(tmp);
             if (!m_videoSocket->isValid() || !readInfo(m_videoSocket, m_deviceName, m_deviceSize)) {
                 stop();
                 emit connectToResult(false);
@@ -45,29 +45,26 @@ Server::Server(QObject *parent) : QObject(parent)
     });
 }
 
-Server:: ~Server()
-{
+Server::~Server() {}
 
-}
-
-const QString& Server::getServerPath()
+const QString &Server::getServerPath()
 {
     if (m_serverPath.isEmpty()) {
         m_serverPath = QString::fromLocal8Bit(qgetenv("QTSCRCPY_SERVER_PATH"));
         QFileInfo fileInfo(m_serverPath);
         if (m_serverPath.isEmpty() || !fileInfo.isFile()) {
-            m_serverPath = QCoreApplication::applicationDirPath() + "/scrcpy-server.jar";
+            m_serverPath = QCoreApplication::applicationDirPath() + "/scrcpy-server";
         }
     }
     return m_serverPath;
 }
 
 bool Server::pushServer()
-{    
+{
     if (m_workProcess.isRuning()) {
         m_workProcess.kill();
     }
-    m_workProcess.push(m_params.serial, getServerPath(), DEVICE_SERVER_PATH);
+    m_workProcess.push(m_params.serial, getServerPath(), Config::getInstance().getServerPath());
     return true;
 }
 
@@ -82,11 +79,11 @@ bool Server::enableTunnelReverse()
 
 bool Server::disableTunnelReverse()
 {
-    AdbProcess* adb = new AdbProcess();
+    AdbProcess *adb = new AdbProcess();
     if (!adb) {
         return false;
     }
-    connect(adb, &AdbProcess::adbProcessResult, this, [this](AdbProcess::ADB_EXEC_RESULT processResult){
+    connect(adb, &AdbProcess::adbProcessResult, this, [this](AdbProcess::ADB_EXEC_RESULT processResult) {
         if (AdbProcess::AER_SUCCESS_START != processResult) {
             sender()->deleteLater();
         }
@@ -105,11 +102,11 @@ bool Server::enableTunnelForward()
 }
 bool Server::disableTunnelForward()
 {
-    AdbProcess* adb = new AdbProcess();
+    AdbProcess *adb = new AdbProcess();
     if (!adb) {
         return false;
     }
-    connect(adb, &AdbProcess::adbProcessResult, this, [this](AdbProcess::ADB_EXEC_RESULT processResult){
+    connect(adb, &AdbProcess::adbProcessResult, this, [this](AdbProcess::ADB_EXEC_RESULT processResult) {
         if (AdbProcess::AER_SUCCESS_START != processResult) {
             sender()->deleteLater();
         }
@@ -125,22 +122,59 @@ bool Server::execute()
     }
     QStringList args;
     args << "shell";
-    args << QString("CLASSPATH=%1").arg(DEVICE_SERVER_PATH);
+    args << QString("CLASSPATH=%1").arg(Config::getInstance().getServerPath());
     args << "app_process";
-    args << "/"; // unused;
+
+#ifdef SERVER_DEBUGGER
+#define SERVER_DEBUGGER_PORT "5005"
+
+    args <<
+#ifdef SERVER_DEBUGGER_METHOD_NEW
+        /* Android 9 and above */
+        "-XjdwpProvider:internal -XjdwpOptions:transport=dt_socket,suspend=y,server=y,address="
+#else
+        /* Android 8 and below */
+        "-agentlib:jdwp=transport=dt_socket,suspend=y,server=y,address="
+#endif
+        SERVER_DEBUGGER_PORT,
+#endif
+
+        args << "/"; // unused;
     args << "com.genymobile.scrcpy.Server";
+    args << Config::getInstance().getServerVersion();
+    args << Config::getInstance().getLogLevel();
     args << QString::number(m_params.maxSize);
     args << QString::number(m_params.bitRate);
+    args << QString::number(m_params.maxFps);
+    args << QString::number(m_params.lockVideoOrientation);
     args << (m_tunnelForward ? "true" : "false");
     if (m_params.crop.isEmpty()) {
         args << "-";
     } else {
         args << m_params.crop;
     }
-    args << (m_params.sendFrameMeta ? "true" : "false");
+    args << "true"; // always send frame meta (packet boundaries + timestamp)
     args << (m_params.control ? "true" : "false");
+    args << "0";                                     // display id
+    args << "false";                                 // show touch
+    args << (m_params.stayAwake ? "true" : "false"); // stay awake
+    // code option
+    // https://github.com/Genymobile/scrcpy/commit/080a4ee3654a9b7e96c8ffe37474b5c21c02852a
+    // <https://d.android.com/reference/android/media/MediaFormat>
+    args << Config::getInstance().getCodecOptions();
 
-    // adb -s P7C0218510000537 shell CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobile.scrcpy.Server 0 8000000 false
+#ifdef SERVER_DEBUGGER
+    qInfo("Server debugger waiting for a client on device port " SERVER_DEBUGGER_PORT "...");
+    // From the computer, run
+    //     adb forward tcp:5005 tcp:5005
+    // Then, from Android Studio: Run > Debug > Edit configurations...
+    // On the left, click on '+', "Remote", with:
+    //     Host: localhost
+    //     Port: 5005
+    // Then click on "Debug"
+#endif
+
+    // adb -s P7C0218510000537 shell CLASSPATH=/data/local/tmp/scrcpy-server app_process / com.genymobile.scrcpy.Server 0 8000000 false
     // mark: crop input format: "width:height:x:y" or - for no crop, for example: "100:200:0:0"
     // 这条adb命令是阻塞运行的，m_serverProcess进程不会退出了
     m_serverProcess.execute(m_params.serial, args);
@@ -148,7 +182,7 @@ bool Server::execute()
 }
 
 bool Server::start(Server::ServerParams params)
-{    
+{
     m_params = params;
     m_serverStartStep = SSS_PUSH;
     return startServerByStep();
@@ -159,7 +193,7 @@ bool Server::connectTo()
     if (SSS_RUNNING != m_serverStartStep) {
         qWarning("server not run");
         return false;
-    }    
+    }
 
     if (!m_tunnelForward && !m_videoSocket) {
         startAcceptTimeoutTimer();
@@ -190,8 +224,8 @@ void Server::timerEvent(QTimerEvent *event)
     }
 }
 
-VideoSocket* Server::getVideoSocket()
-{    
+VideoSocket *Server::getVideoSocket()
+{
     return m_videoSocket;
 }
 
@@ -226,8 +260,8 @@ void Server::stop()
         }
         m_tunnelForward = false;
         m_tunnelEnabled = false;
-    }    
-    m_serverSocket.close();    
+    }
+    m_serverSocket.close();
 }
 
 bool Server::startServerByStep()
@@ -246,27 +280,6 @@ bool Server::startServerByStep()
             stepSuccess = enableTunnelForward();
             break;
         case SSS_EXECUTE_SERVER:
-            // if "adb reverse" does not work (e.g. over "adb connect"), it fallbacks to
-            // "adb forward", so the app socket is the client
-            if (!m_tunnelForward) {
-                // At the application level, the device part is "the server" because it
-                // serves video stream and control. However, at the network level, the
-                // client listens and the server connects to the client. That way, the
-                // client can listen before starting the server app, so there is no need to
-                // try to connect until the server socket is listening on the device.
-                m_serverSocket.setMaxPendingConnections(2);
-                if (!m_serverSocket.listen(QHostAddress::LocalHost, m_params.localPort)) {
-                    qCritical(QString("Could not listen on port %1").arg(m_params.localPort).toStdString().c_str());
-                    m_serverStartStep = SSS_NULL;
-                    if (m_tunnelForward) {
-                        disableTunnelForward();
-                    } else {
-                        disableTunnelReverse();
-                    }
-                    emit serverStartResult(false);
-                    return false;
-                }
-            }
             // server will connect to our server socket
             stepSuccess = execute();
             break;
@@ -281,14 +294,14 @@ bool Server::startServerByStep()
     return stepSuccess;
 }
 
-bool Server::readInfo(VideoSocket* videoSocket, QString &deviceName, QSize &size)
+bool Server::readInfo(VideoSocket *videoSocket, QString &deviceName, QSize &size)
 {
     unsigned char buf[DEVICE_NAME_FIELD_LENGTH + 4];
     if (videoSocket->bytesAvailable() <= (DEVICE_NAME_FIELD_LENGTH + 4)) {
         videoSocket->waitForReadyRead(300);
     }
 
-    qint64 len = videoSocket->read((char*)buf, sizeof(buf));
+    qint64 len = videoSocket->read((char *)buf, sizeof(buf));
     if (len < DEVICE_NAME_FIELD_LENGTH + 4) {
         qInfo("Could not retrieve device information");
         return false;
@@ -296,7 +309,7 @@ bool Server::readInfo(VideoSocket* videoSocket, QString &deviceName, QSize &size
     buf[DEVICE_NAME_FIELD_LENGTH - 1] = '\0'; // in case the client sends garbage
     // strcpy is safe here, since name contains at least DEVICE_NAME_FIELD_LENGTH bytes
     // and strlen(buf) < DEVICE_NAME_FIELD_LENGTH
-    deviceName = (char*)buf;
+    deviceName = (char *)buf;
     size.setWidth((buf[DEVICE_NAME_FIELD_LENGTH] << 8) | buf[DEVICE_NAME_FIELD_LENGTH + 1]);
     size.setHeight((buf[DEVICE_NAME_FIELD_LENGTH + 2] << 8) | buf[DEVICE_NAME_FIELD_LENGTH + 3]);
     return true;
@@ -340,7 +353,7 @@ void Server::onConnectTimer()
     QSize deviceSize;
     bool success = false;
 
-    VideoSocket* videoSocket = new VideoSocket();
+    VideoSocket *videoSocket = new VideoSocket();
     QTcpSocket *controlSocket = new QTcpSocket();
 
     videoSocket->connectToHost(QHostAddress::LocalHost, m_params.localPort);
@@ -425,7 +438,7 @@ void Server::onWorkProcessResult(AdbProcess::ADB_EXEC_RESULT processResult)
                         m_serverStartStep = SSS_ENABLE_TUNNEL_FORWARD;
                     }
                     startServerByStep();
-                } else if (AdbProcess::AER_SUCCESS_START != processResult){
+                } else if (AdbProcess::AER_SUCCESS_START != processResult) {
                     qCritical("adb push failed");
                     m_serverStartStep = SSS_NULL;
                     emit serverStartResult(false);
@@ -433,9 +446,23 @@ void Server::onWorkProcessResult(AdbProcess::ADB_EXEC_RESULT processResult)
                 break;
             case SSS_ENABLE_TUNNEL_REVERSE:
                 if (AdbProcess::AER_SUCCESS_EXEC == processResult) {
+                    // At the application level, the device part is "the server" because it
+                    // serves video stream and control. However, at the network level, the
+                    // client listens and the server connects to the client. That way, the
+                    // client can listen before starting the server app, so there is no need to
+                    // try to connect until the server socket is listening on the device.
+                    m_serverSocket.setMaxPendingConnections(2);
+                    if (!m_serverSocket.listen(QHostAddress::LocalHost, m_params.localPort)) {
+                        qCritical() << QString("Could not listen on port %1").arg(m_params.localPort).toStdString().c_str();
+                        m_serverStartStep = SSS_NULL;
+                        disableTunnelReverse();
+                        emit serverStartResult(false);
+                        break;
+                    }
+
                     m_serverStartStep = SSS_EXECUTE_SERVER;
                     startServerByStep();
-                } else if (AdbProcess::AER_SUCCESS_START != processResult){
+                } else if (AdbProcess::AER_SUCCESS_START != processResult) {
                     // 有一些设备reverse会报错more than o'ne device，adb的bug
                     // https://github.com/Genymobile/scrcpy/issues/5
                     qCritical("adb reverse failed");
@@ -448,7 +475,7 @@ void Server::onWorkProcessResult(AdbProcess::ADB_EXEC_RESULT processResult)
                 if (AdbProcess::AER_SUCCESS_EXEC == processResult) {
                     m_serverStartStep = SSS_EXECUTE_SERVER;
                     startServerByStep();
-                } else if (AdbProcess::AER_SUCCESS_START != processResult){
+                } else if (AdbProcess::AER_SUCCESS_START != processResult) {
                     qCritical("adb forward failed");
                     m_serverStartStep = SSS_NULL;
                     emit serverStartResult(false);
@@ -465,7 +492,7 @@ void Server::onWorkProcessResult(AdbProcess::ADB_EXEC_RESULT processResult)
                 m_serverStartStep = SSS_RUNNING;
                 m_tunnelEnabled = true;
                 emit serverStartResult(true);
-            } else if (AdbProcess::AER_ERROR_START == processResult){
+            } else if (AdbProcess::AER_ERROR_START == processResult) {
                 if (!m_tunnelForward) {
                     m_serverSocket.close();
                     disableTunnelReverse();

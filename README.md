@@ -1,16 +1,33 @@
-# QtScrcpy
+# QtScrcpy 
 
-![build state](https://img.shields.io/badge/build-passing-brightgreen.svg)
+[![Financial Contributors on Open Collective](https://opencollective.com/QtScrcpy/all/badge.svg?label=financial+contributors)](https://opencollective.com/QtScrcpy)
+![Windows](https://github.com/barry-ran/QtScrcpy/workflows/Windows/badge.svg)
+![MacOS](https://github.com/barry-ran/QtScrcpy/workflows/MacOS/badge.svg)
+![Ubuntu](https://github.com/barry-ran/QtScrcpy/workflows/Ubuntu/badge.svg)
+
 ![license](https://img.shields.io/badge/license-Apache2.0-blue.svg)
-![release](https://img.shields.io/badge/release-v1.0.1-brightgreen.svg)
+![release](https://img.shields.io/github/v/release/barry-ran/QtScrcpy.svg)
 
-[English introduction (from Google Translate)](README_EN.md)
+<a href="https://tracking.gitads.io/?repo=QtScrcpy"><img src="https://images.gitads.io/QtScrcpy" alt="GitAds"/></a>
 
-QtScrcpy可以通过USB(或通过TCP/IP)连接Android设备，并进行显示和控制。不需要root权限。
+[中文介绍](README_zh.md)
 
-单个应用程序最多支持16个安卓设备同时连接。
+QtScrcpy connects to Android devices via USB (or via TCP/IP) for display and control. It does NOT require the root privileges.
 
-同时支持GNU/Linux，Windows和MacOS三大主流桌面平台
+A single instance supports up to 16 Android device connections at the same time.
+
+It supports three major platforms: GNU/Linux, Windows and MacOS.
+
+It focuses on:
+
+ - **lightness** (native, displays only the device screen)
+ - **performance** (30~60fps)
+ - **quality** (1920×1080 or above)
+ - **low latency** ([35~70ms][lowlatency])
+ - **low startup time** (~1 second to display the first image)
+ - **non-intrusiveness** (nothing is left installed on the device)
+
+[lowlatency]: https://github.com/Genymobile/scrcpy/pull/646
 
 ![win](screenshot/win.png)
 
@@ -18,195 +35,276 @@ QtScrcpy可以通过USB(或通过TCP/IP)连接Android设备，并进行显示和
 
 ![linux](screenshot/ubuntu.png)
 
-## 自定义按键映射（仅windows平台开启）
-可以根据需要，自己编写脚本将PC键盘按键映射为手机的触摸点击，编写规则在[这里](按键映射说明.md)。
+## Customized key mapping
+You can write your own script to map keyboard and mouse actions to touches and clicks of the mobile phone according to your needs. [Here](docs/KeyMapDes.md) are the rules.
 
-默认自带了针对和平精英手游进行键鼠映射的映射脚本，开启后可以用键鼠像玩端游一样玩和平精英手游，你也可以按照[编写规则](按键映射说明.md)编写其他游戏的映射文件，默认按键映射如下：
+A script for "PUBG mobile" and TikTok mapping is provided by default. Once enabled, you can play the game with your keyboard and mouse as the PC version. or you can use up/down/left/right direction keys to simulate up/down/left/right sliding. You can also write your own mapping files for other games according to [writing rules](docs/KeyMapDes.md). The default key mapping is as follows:
 
 ![game](screenshot/game.jpg)
 
-[这里有玩和平精英的视频演示](http://mp.weixin.qq.com/mp/video?__biz=MzU1NTg5MjYyNw==&mid=100000015&sn=3e301fdc5a364bd16d6207fa674bc8b3&vid=wxv_968792362971430913&idx=1&vidsn=eec329cc13c3e24c187dc9b4d5eb8760&fromid=1&scene=20&xtrack=1&clicktime=1567346543&sessionid=1567346375&subscene=92&ascene=0&fasttmpl_type=0&fasttmpl_fullversion=4730859-zh_CN-zip&fasttmpl_flag=0&realreporttime=1567346543910#wechat_redirect)
+[Here is a video demonstration of playing "PUBG mobile"](http://mp.weixin.qq.com/mp/video?__biz=MzU1NTg5MjYyNw==&mid=100000015&sn=3e301fdc5a364bd16d6207fa674bc8b3&vid=wxv_968792362971430913&idx=1&vidsn=eec329cc13c3e24c187dc9b4d5eb8760&fromid=1&scene=20&xtrack=1&clicktime=1567346543&sessionid=1567346375&subscene=92&ascene=0&fasttmpl_type=0&fasttmpl_fullversion=4730859-zh_CN-zip&fasttmpl_flag=0&realreporttime=1567346543910#wechat_redirect)
 
-自定义按键映射操作方法如下：
-- 编写自定义脚本放入keymap目录
-- 启动服务之前记得勾选自定义映射选项，并选择自定义映射脚本
-- 连接手机以后进入游戏场景
-- 按~键（数字键1左边）切换为游戏映射模式即可体验（具体按什么键要看你按键脚本定义的switchKey）
-- 再次按~键切换为正常控制模式
-- 要想wasd控制开车记得在载具设置中设置为单摇杆模式
+Here is the instruction of adding new customized mapping files.
 
-## 感谢
+- Write a customized script and put it in the `keymap` directory
+- Click `refresh script` to check whether it can be found
+- Select your script
+- Connect your phone, start service and click `apply`
+- Press `~` key (left side of the number key 1) to switch to the custom mapping mode (It can be changed in the script as `switchkey`)
+- Press the ~ key again to switch back to normal mode
+- (For PUBG and similar games) If you want to drive cars with WASD, you need to check the `single rocker mode` in the game setting.
 
-基于[Genymobile](https://github.com/Genymobile)的[scrcpy](https://github.com/Genymobile/scrcpy)项目进行复刻，重构，非常感谢他。QtScrcpy和原版scrcpy区别如下：
+## Group control
+You can control all your phones at the same time.
 
-关键点|scrcpy|QtScrcpy
+![](docs/image/group-control.gif)
+
+## Thanks
+
+QtScrcpy is based on [Genymobile's](https://github.com/Genymobile) [scrcpy](https://github.com/Genymobile/scrcpy) project. Thanks
+
+The difference between QtScrcpy and the original scrcpy is as follows:
+
+keys|scrcpy|QtScrcpy
 --|:--:|:--:
-界面|sdl|qt
-视频解码|ffmpeg|ffmpeg
-视频渲染|sdl|opengl
-跨平台基础设施|自己封装|Qt提供
-编程语言|C|C++
-编程方式|同步|异步
-控制方式|单点触控|单点/多点触控
-编译方式|meson+gradle|Qt Creator
+ui|sdl|qt
+video encode|ffmpeg|ffmpeg
+video render|sdl|opengl
+cross-platform|self implemented|provided by Qt
+language|C|C++
+style|sync|async
+keymap|no custom keymap|support custom keymap
+build|meson+gradle|Qt Creator
 
-- 使用Qt可以非常容易的定制自己的界面
-- 基于Qt的信号槽机制的异步编程提高性能
-- 方便新手学习
-- 增加多点触控支持
-
-
-## 学习它
-如果你对它感兴趣，想学习它的实现原理而又感觉无从下手，可以选择购买我录制的视频课程，
-里面详细介绍了整个软件的开发架构以及开发流程，带你从无到有的开发QtScrcpy：
-
-课程介绍：[https://blog.csdn.net/rankun1/article/details/87970523](https://blog.csdn.net/rankun1/article/details/87970523)
-
-或者你也可以加入我的QtScrcpy QQ群，和志同道合的朋友一块互相交流技术：
-
-QQ群号：901736468
+- It's very easy to customize your GUI with Qt
+- Asynchronous programming of Qt-based signal slot mechanism improves performance
+- Easy to learn
+- Add support for multi-touch
 
 
-## 要求
-Android部分至少需要API 21（Android 5.0）。
+## Learn
 
-您要确保在Android设备上[启用adb调试][enable-adb]。
+If you are interested in it and want to learn how it works but do not know how to get started, you can choose to purchase my recorded video lessons.
+It details the development architecture and the development process of the entire software, and help you develop QtScrcpy from scratch.
+
+Course introduction：[https://blog.csdn.net/rankun1/article/details/87970523](https://blog.csdn.net/rankun1/article/details/87970523)
+
+You can join my QQ group for QtScrcpy and exchange ideas with like-minded friends.：
+
+QQ Group number：901736468
+
+
+## Requirements
+Android API >= 21 (Android 5.0).
+
+Make sure you enabled [adb debugging][enable-adb] on your device(s).
 
 [enable-adb]: https://developer.android.com/studio/command-line/adb.html#Enabling
 
 
-## 下载这个软件
+## Download
 
 [gitee-download]: https://gitee.com/Barryda/QtScrcpy/releases
 [github-download]: https://github.com/barry-ran/QtScrcpy/releases
 
 ### Windows
+For Windows, for simplicity, prebuilt archives with all the dependencies (including adb) are available:
 
-windows平台，你可以直接使用我编译好的可执行程序:
+ - [`QtScrcpy`][github-download]
 
- - [国内下载][gitee-download]
- - [国外下载][github-download]
-
-你也可以[自己编译](#如何编译)
+or you can [build it by yourself](##Build)
 
 ### Mac OS
+For Mac OS, for simplicity, prebuilt archives with all the dependencies (including adb) are available:
 
-Mac OS平台，你可以直接使用我编译好的可执行程序:
+- [`QtScrcpy`][github-download]
 
-- [国内下载][gitee-download]
-- [国外下载][github-download]
-
-你也可以[自己编译](#如何编译)
+or you can [build it by yourself](##Build)
 
 ### Linux
+you can [build it by yourself](##Build)(just ubuntu test)
 
-目前只提供了windows和mac平台的可执行程序，如果需要linux平台的可执行程序，
 
-您通常需要[自己编译](#如何编译)。别担心，这并不难。
+## Run
 
-目前只在ubuntu上测试过
+Connect to your Android device on your computer, then run the program and click the button below to connect to the Android device.
 
-## 运行
+![run](screenshot/run.png)
 
-在你的电脑上接入Android设备，然后运行程序，按顺序点击如下按钮即可连接到Android设备
+### Wireless connection steps (ensure that the mobile phone and PC are in the same LAN):
+1. Enable USB debugging in developer options on the Android device
+2. Connect the Android device to computer via USB
+3. Click update device, and you will see that the device number is updated
+4. Click get device IP
+5. Click start adbd
+6. Click wireless connect
+7. Click update device again, and another device with IP address will be found. Select this device.
+8. Click start service
 
-![运行](screenshot/run.png)
+​	
 
-### 无线连接步骤（保证手机和电脑在同一个局域网）：
-1. 安卓手机端在开发者选项中打开usb调试
-2. 通过usb连接安卓手机到电脑
-3. 点击刷新设备，会看到有设备号更新出来
-4. 点击获取设备ip
-5. 点击启动adbd
-6. 无线连接
-7. 再次点击刷新设备，发现多出了一个ip地址开头的设备，选择这个设备
-8. 启动服务
+Note: it is not necessary to keep you Android device connected via USB after you start adbd.
 
-备注：启动adbd以后不用再usb线了，以后连接断开都不再需要，除非安卓adbd停了需要重新启动
+## Interface button introduction：
 
-## 界面按钮介绍：
+- Start config: function parameter settings before starting the service    
 
-- 启动配置：启动服务前的功能参数设置    
+    You can set the bit rate, resolution, recording format, and video save path of the local recorded video.
 
-    分别可以设置本地录制视频的比特率、分辨率、录制格式、录像保存路径等。
-
-    - 仅后台录制：启动服务不现实界面，只是录制Android设备屏幕
-    - 窗口置顶：Android设备视频窗口置顶显示
-    - 自动息屏：启动服务以后，自动关闭Android设备屏幕节省电量
-    - 使用reverse：服务启动模式，出现服务启动失败报错more than one device可以去掉这个勾选尝试连接
+    - Background record: the Android device screen is not displayed after starting the service. It is recorded in background.
+    - Always on top: the video window for Android device will be kept on the top
+    - Close screen: automatically turn off the Android device screen to save power after starting the service
+    - Reverse connection: service startup mode. You can uncheck it if you experience connection failure with message `more than one device`
     
+- Refresh devices: Refresh the currently connected device
+- Start service: connect to the Android device
+- Stop service: disconnect from Android device
+- Stop all services: disconnect all connected Android devices
+- Get device IP: Get the IP address of the Android device and update it to the "Wireless" area for the ease of wireless connection setting.
+- Start adbd: Start the adbd service of the Android device. You must start it before the wireless connection.
+- Wireless connect: Connect to Android devices wirelessly
+- Wireless disconnect: Disconnect wirelessly connected Android devices
+- adb command: execute customized adb commands (blocking commands are not supported now, such as shell)
 
-- 刷新设备列表：刷新当前连接的设备
-- 启动服务：连接到Android设备
-- 停止服务：断开与Android设备的连接
-- 停止所有服务：断开所有已连接的Android设备
-- 获取设备ip：获取到Android设备的ip地址，更新到“无线”区域中，方便进行无线连接
-- 启动adbd：启动Android设备的adbd服务，无线连接之前，必须要启动。
-- 无线连接：使用无线方式连接Android设备
-- 无线断开：断开无线方式连接的Android设备
-- adb命令行：方便执行自定义adb命令（目前不支持阻塞命令，例如shell）
 
+## The main function
+- Display Android device screens in real time
+- Real-time mouse and keyboard control of Android devices
+- Screen recording
+- Screenshot to png
+- Wireless connection
+- Supports up to 16 device connections (the number can be higher if your PC performance allows. You need to compile it by yourself)
+- Full-screen display
+- Display on the top
+- Install apk: drag and drop apk to the video window to install
+- Transfer files: Drag files to the video window to send files to Android devices
+- Background recording: record only, no display interface
+- Copy-paste
 
-## 主要功能
-- 实时显示Android设备屏幕
-- 实时键鼠控制Android设备
-- 屏幕录制
-- 无线连接
-- 最多支持16台设备连接（PC性能允许的情况下可以增加，需要自己编译）
-- 全屏显示
-- 窗口置顶
-- 安装apk：拖拽apk到视频窗口即可安装
-- 传输文件：拖拽文件到视频窗口即可发送文件到Android设备
-- 后台录制：只录制，不显示界面
+    It is possible to synchronize clipboards between the computer and the device, in
+    both directions:
+
+    - `Ctrl`+`c` copies the device clipboard to the computer clipboard;
+    - `Ctrl`+`Shift`+`v` copies the computer clipboard to the device clipboard;
+    - `Ctrl`+`v` _pastes_ the computer clipboard as a sequence of text events (but
+    breaks non-ASCII characters).
+- Group control
+
+## Shortcuts
+
+ | Action                                 |   Shortcut (Windows)          |   Shortcut (macOS)
+ | -------------------------------------- |:----------------------------- |:-----------------------------
+ | Switch fullscreen mode                 | `Ctrl`+`f`                    | `Cmd`+`f`
+ | Resize window to 1:1 (pixel-perfect)   | `Ctrl`+`g`                    | `Cmd`+`g`
+ | Resize window to remove black borders  | `Ctrl`+`x` \| _Double-click¹_ | `Cmd`+`x`  \| _Double-click¹_
+ | Click on `HOME`                        | `Ctrl`+`h` \| _Middle-click_  | `Ctrl`+`h` \| _Middle-click_
+ | Click on `BACK`                        | `Ctrl`+`b` \| _Right-click²_  | `Cmd`+`b`  \| _Right-click²_
+ | Click on `APP_SWITCH`                  | `Ctrl`+`s`                    | `Cmd`+`s`
+ | Click on `MENU`                        | `Ctrl`+`m`                    | `Ctrl`+`m`
+ | Click on `VOLUME_UP`                   | `Ctrl`+`↑` _(up)_             | `Cmd`+`↑` _(up)_
+ | Click on `VOLUME_DOWN`                 | `Ctrl`+`↓` _(down)_           | `Cmd`+`↓` _(down)_
+ | Click on `POWER`                       | `Ctrl`+`p`                    | `Cmd`+`p`
+ | Power on                               | _Right-click²_                | _Right-click²_
+ | Turn device screen off (keep mirroring)| `Ctrl`+`o`                    | `Cmd`+`o`
+ | Expand notification panel              | `Ctrl`+`n`                    | `Cmd`+`n`
+ | Collapse notification panel            | `Ctrl`+`Shift`+`n`            | `Cmd`+`Shift`+`n`
+ | Copy device clipboard to computer      | `Ctrl`+`c`                    | `Cmd`+`c`
+ | Paste computer clipboard to device     | `Ctrl`+`v`                    | `Cmd`+`v`
+ | Copy computer clipboard to device      | `Ctrl`+`Shift`+`v`            | `Cmd`+`Shift`+`v`
+
+_¹Double-click on black borders to remove them._  
+
+_²Right-click turns the screen on if it was off, presses BACK otherwise._
 
 ## TODO
-[后期计划](TODO.md)
+[TODO](docs/TODO.md)
 
 ## FAQ
-[常见问题说明](FAQ.md)
+[FAQ](docs/FAQ.md)
 
-## 为什么开发QtScrcpy？
-综合起来有以下几个原因，比重从大到小排列：
-1. 学习Qt的过程中需要一个项目实战一下
-2. 本身具有音视频相关技能，对音视频很感兴趣
-3. 本身具有Android开发技能，好久没用有点生疏，需要巩固一下
-4. 发现了scrcpy，决定用新的技术栈（C++ + Qt + Opengl + ffmpeg）复刻一下
+## DEVELOP
+[DEVELOP](docs/DEVELOP.md)
+
+Everyone is welcome to maintain this project and contribute your own code, but please follow these requirements:
+1. pr please mention the dev branch, not the master branch
+2. Please rebase dev before mentioning pr
+3. pr please submit on the principle of a small number of times (a small function point is recommended to mention a pr)
+4. Please keep the code style consistent with the existing style
+
+## Why develop QtScrcpy?
+There are several reasons listed as below according to importance (high to low).
+1. In the process of learning Qt, I need a real project to try
+2. I have some background skill about audio and video and I am interested at them
+3. I have some Android development skills. But I have used it for a long time. I want to consolidate it.
+4. I found scrcpy and decided to re-make it with the new technology stack (C++ + Qt + Opengl + ffmpeg)
 
 
-## 如何编译
-尽量提供了所有依赖资源，方便傻瓜式编译。
+## Build
+All the dependencies are provided and it is easy to compile.
 
-### PC端
-1. 目标平台上搭建Qt开发环境(Qt >= 5.9.7, vs >= 2015 (不支持mingw))
-2. 克隆该项目
-3. 使用QtCreator打开项目根目录all.pro
-4. 编译，运行即可
+### PC client
+1. Set up the Qt development environment on the target platform (Qt == 5.15.0, vs == 2017 (mingw not supported))
+2. Clone the project
+3. Open the project root directory all.pro with QtCreator
+4. Compile and run
 
-### Android端 （没有修改需求的话直接使用自带的scrcpy-server.jar即可）
-1. 目标平台上搭建Android开发环境
-2. 使用Android Studio打开项目根目录中的server项目
-3. 编辑即可
-4. 编译出apk以后改名为scrcpy-server.jar并替换third_party/scrcpy-server.jar即可
+### Android (If you do not have special requirements, you can directly use the built-in scrcpy-server.jar)
+
+1. Set up an Android development environment on the target platform
+2. Open server project in project root with Android Studio
+3. The first time you open it, if you do not have the corresponding version of gradle, you will be prompted to find gradle, whether to upgrade gradle and create it. Select Cancel. After canceling, you will be prompted to select the location of the existing gradle. You can also cancel it (it will download automatically).
+4. Edit the code as needed, but of course you do n’t need to.
+4. After compiling the apk, rename it to scrcpy-server and replace third_party/scrcpy-server.
 
 ## Licence
-由于是复刻的scrcpy，尊重它的Licence
+Since it is based on scrcpy, respect its Licence
 
-    Copyright (C) 2018 Genymobile
-
+    Copyright (C) 2020 Barry
+    
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
     You may obtain a copy of the License at
-
+    
         http://www.apache.org/licenses/LICENSE-2.0
-
+    
     Unless required by applicable law or agreed to in writing, software
     distributed under the License is distributed on an "AS IS" BASIS,
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
 
-## 关于作者
+## About the author
 
-[Barry的CSDN](https://blog.csdn.net/rankun1)
+[Barry CSDN](https://blog.csdn.net/rankun1)
 
-一枚普通的程序员，工作中主要使用C++进行桌面客户端开发，一毕业在山东做过一年多钢铁仿真教育软件，后来转战上海先后从事安防，在线教育相关领域工作，对音视频比较熟悉，对音视频领域如语音通话，直播教育，视频会议等相关解决方案有所了解。同时具有android，linux服务器等开发经验。
+An ordinary programmer, working mainly in C++ for desktop client development, graduated from Shandong for more than a year of steel simulation education software, and later moved to Shanghai to work in security, online education related fields, familiar with audio and video. I have an understanding of audio and video fields such as voice calls, live education, video conferencing and other related solutions. At the same time have android, linux server and other development experience.
+
+## Contributors
+
+### Code Contributors
+
+This project exists thanks to all the people who contribute. [[Contribute](CONTRIBUTING.md)].
+<a href="https://github.com/barry-ran/QtScrcpy/graphs/contributors"><img src="https://opencollective.com/QtScrcpy/contributors.svg?width=890&button=false" /></a>
+
+### Financial Contributors
+
+Become a financial contributor and help us sustain our community. [[Contribute](https://opencollective.com/QtScrcpy/contribute)]
+
+#### Individuals
+
+<a href="https://opencollective.com/QtScrcpy"><img src="https://opencollective.com/QtScrcpy/individuals.svg?width=890"></a>
+
+#### Organizations
+
+Support this project with your organization. Your logo will show up here with a link to your website. [[Contribute](https://opencollective.com/QtScrcpy/contribute)]
+
+<a href="https://opencollective.com/QtScrcpy/organization/0/website"><img src="https://opencollective.com/QtScrcpy/organization/0/avatar.svg"></a>
+<a href="https://opencollective.com/QtScrcpy/organization/1/website"><img src="https://opencollective.com/QtScrcpy/organization/1/avatar.svg"></a>
+<a href="https://opencollective.com/QtScrcpy/organization/2/website"><img src="https://opencollective.com/QtScrcpy/organization/2/avatar.svg"></a>
+<a href="https://opencollective.com/QtScrcpy/organization/3/website"><img src="https://opencollective.com/QtScrcpy/organization/3/avatar.svg"></a>
+<a href="https://opencollective.com/QtScrcpy/organization/4/website"><img src="https://opencollective.com/QtScrcpy/organization/4/avatar.svg"></a>
+<a href="https://opencollective.com/QtScrcpy/organization/5/website"><img src="https://opencollective.com/QtScrcpy/organization/5/avatar.svg"></a>
+<a href="https://opencollective.com/QtScrcpy/organization/6/website"><img src="https://opencollective.com/QtScrcpy/organization/6/avatar.svg"></a>
+<a href="https://opencollective.com/QtScrcpy/organization/7/website"><img src="https://opencollective.com/QtScrcpy/organization/7/avatar.svg"></a>
+<a href="https://opencollective.com/QtScrcpy/organization/8/website"><img src="https://opencollective.com/QtScrcpy/organization/8/avatar.svg"></a>
+<a href="https://opencollective.com/QtScrcpy/organization/9/website"><img src="https://opencollective.com/QtScrcpy/organization/9/avatar.svg"></a>

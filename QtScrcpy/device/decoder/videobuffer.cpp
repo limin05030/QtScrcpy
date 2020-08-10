@@ -1,22 +1,17 @@
 #include "videobuffer.h"
 extern "C"
 {
-#include "libavutil/avutil.h"
 #include "libavformat/avformat.h"
+#include "libavutil/avutil.h"
 }
 
-VideoBuffer::VideoBuffer()
+VideoBuffer::VideoBuffer() {}
+
+VideoBuffer::~VideoBuffer() {}
+
+bool VideoBuffer::init(bool renderExpiredFrames)
 {
-
-}
-
-VideoBuffer::~VideoBuffer()
-{
-
-}
-
-bool VideoBuffer::init()
-{
+    m_renderExpiredFrames = renderExpiredFrames;
     m_decodingFrame = av_frame_alloc();
     if (!m_decodingFrame) {
         goto error;
@@ -67,26 +62,26 @@ AVFrame *VideoBuffer::decodingFrame()
     return m_decodingFrame;
 }
 
-void VideoBuffer::offerDecodedFrame(bool& previousFrameSkipped)
+void VideoBuffer::offerDecodedFrame(bool &previousFrameSkipped)
 {
     m_mutex.lock();
 
-#ifndef SKIP_FRAMES
-    // if SKIP_FRAMES is disabled, then the decoder must wait for the current
-    // frame to be consumed
-    while (!m_renderingFrameConsumed && !m_interrupted) {
-        m_renderingFrameConsumedCond.wait(&m_mutex);
-    }    
-#else
-    if (m_fpsCounter.isStarted() && !m_renderingFrameConsumed) {
-        m_fpsCounter.addSkippedFrame();
+    if (m_renderExpiredFrames) {
+        // if m_renderExpiredFrames is enable, then the decoder must wait for the current
+        // frame to be consumed
+        while (!m_renderingFrameConsumed && !m_interrupted) {
+            m_renderingFrameConsumedCond.wait(&m_mutex);
+        }
+    } else {
+        if (m_fpsCounter.isStarted() && !m_renderingFrameConsumed) {
+            m_fpsCounter.addSkippedFrame();
+        }
     }
-#endif
 
     swap();
     previousFrameSkipped = !m_renderingFrameConsumed;
     m_renderingFrameConsumed = false;
-    m_mutex.unlock();    
+    m_mutex.unlock();
 }
 
 const AVFrame *VideoBuffer::consumeRenderedFrame()
@@ -96,23 +91,33 @@ const AVFrame *VideoBuffer::consumeRenderedFrame()
     if (m_fpsCounter.isStarted()) {
         m_fpsCounter.addRenderedFrame();
     }
-#ifndef SKIP_FRAMES
-    // if SKIP_FRAMES is disabled, then notify the decoder the current frame is
-    // consumed, so that it may push a new one
-    m_renderingFrameConsumedCond.wakeOne();
-#endif
+    if (m_renderExpiredFrames) {
+        // if m_renderExpiredFrames is enable, then notify the decoder the current frame is
+        // consumed, so that it may push a new one
+        m_renderingFrameConsumedCond.wakeOne();
+    }
+    return m_renderingframe;
+}
+
+const AVFrame *VideoBuffer::peekRenderedFrame()
+{
     return m_renderingframe;
 }
 
 void VideoBuffer::interrupt()
 {
-#ifndef SKIP_FRAMES
-    m_mutex.lock();
-    m_interrupted = true;
-    m_mutex.unlock();
-    // wake up blocking wait
-    m_renderingFrameConsumedCond.wakeOne();
-#endif
+    if (m_renderExpiredFrames) {
+        m_mutex.lock();
+        m_interrupted = true;
+        m_mutex.unlock();
+        // wake up blocking wait
+        m_renderingFrameConsumedCond.wakeOne();
+    }
+}
+
+FpsCounter *VideoBuffer::getFPSCounter()
+{
+    return &m_fpsCounter;
 }
 
 void VideoBuffer::swap()
